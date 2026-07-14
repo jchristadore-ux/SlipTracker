@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#0b2a1f">
+<title>WC Semis — Bet Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --pitch:#0b2a1f;
+    --pitch-2:#103829;
+    --line:#2c5a46;
+    --chalk:#eef3ef;
+    --dim:#8fae9f;
+    --gold:#f2c14e;
+    --hit:#3fd07f;
+    --miss:#e2574c;
+    --card:#0f3225;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    background:var(--pitch);
+    background-image:repeating-linear-gradient(90deg, rgba(255,255,255,.014) 0 40px, transparent 40px 80px);
+    color:var(--chalk);
+    font-family:'IBM Plex Sans',system-ui,sans-serif;
+    padding:16px 14px 60px;
+    -webkit-font-smoothing:antialiased;
+    min-height:100vh;
+  }
+  .wrap{max-width:820px;margin:0 auto}
+
+  header{border-bottom:2px solid var(--line);padding-bottom:14px;margin-bottom:18px}
+  .eyebrow{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.18em;color:var(--gold);text-transform:uppercase}
+  h1{font-family:'Barlow Condensed',sans-serif;font-size:38px;line-height:1;letter-spacing:.01em;text-transform:uppercase;margin:4px 0 12px}
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+  .kpi{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:8px 10px}
+  .kpi .l{font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);font-family:'IBM Plex Mono',monospace}
+  .kpi .v{font-family:'Barlow Condensed',sans-serif;font-size:24px;line-height:1.1;margin-top:2px}
+  .kpi .v.gold{color:var(--gold)}
+  .kpi .v.hit{color:var(--hit)}
+
+  .bar{display:flex;gap:8px;margin:16px 0 10px;flex-wrap:wrap;align-items:center}
+  button.act{
+    font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;
+    background:transparent;color:var(--dim);border:1px solid var(--line);border-radius:4px;
+    padding:8px 12px;cursor:pointer;
+  }
+  button.act:hover{color:var(--chalk);border-color:var(--chalk)}
+  button.act:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+  .hint{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--dim)}
+
+  h2.match{
+    font-family:'Barlow Condensed',sans-serif;font-size:22px;text-transform:uppercase;letter-spacing:.06em;
+    margin:24px 0 4px;padding-left:10px;border-left:4px solid var(--gold);
+  }
+  .kick{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--dim);margin:0 0 10px 14px;letter-spacing:.1em}
+
+  .leg{
+    display:flex;align-items:center;gap:12px;
+    background:var(--card);border:1px solid var(--line);border-left:4px solid var(--line);
+    border-radius:6px;padding:11px 12px;margin-bottom:7px;cursor:pointer;
+    transition:border-color .12s ease,background .12s ease;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .leg:hover{background:var(--pitch-2)}
+  .leg:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+  .leg[data-state="hit"]{border-left-color:var(--hit)}
+  .leg[data-state="miss"]{border-left-color:var(--miss);opacity:.6}
+  .mark{
+    flex:0 0 30px;height:30px;border-radius:50%;border:1.5px solid var(--line);
+    display:flex;align-items:center;justify-content:center;
+    font-family:'Barlow Condensed',sans-serif;font-size:19px;color:var(--dim);
+  }
+  .leg[data-state="hit"] .mark{border-color:var(--hit);color:var(--hit);background:rgba(63,208,127,.12)}
+  .leg[data-state="miss"] .mark{border-color:var(--miss);color:var(--miss);background:rgba(226,87,76,.12)}
+  .leg .body{flex:1;min-width:0}
+  .leg .who{font-weight:600;font-size:15px}
+  .leg[data-state="hit"] .who{text-decoration:line-through;text-decoration-color:var(--hit);text-decoration-thickness:1px}
+  .leg .what{font-size:12px;color:var(--dim);margin-top:1px;line-height:1.35}
+  .tags{flex:0 0 auto;display:flex;gap:4px;align-items:center;flex-wrap:wrap;justify-content:flex-end;max-width:120px}
+  .tag{
+    font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;
+    border:1px solid var(--line);border-radius:3px;padding:2px 5px;color:var(--dim);
+  }
+  .dupe{background:var(--gold);color:#0b2a1f;border-color:var(--gold);font-weight:700}
+
+  .slips{margin-top:30px}
+  .slip{
+    background:var(--card);border:1px solid var(--line);border-radius:6px;
+    padding:12px;margin-bottom:8px;
+  }
+  .slip .top{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+  .slip .name{font-family:'Barlow Condensed',sans-serif;font-size:20px;text-transform:uppercase;letter-spacing:.04em}
+  .slip .odds{font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--gold);white-space:nowrap}
+  .slip .money{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--dim);margin-top:3px}
+  .slip .prog{height:5px;background:#0a2418;border-radius:3px;margin-top:9px;overflow:hidden}
+  .slip .prog i{display:block;height:100%;background:var(--hit);width:0;transition:width .2s ease}
+  .status{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;margin-top:7px}
+  .status.live{color:var(--dim)}
+  .status.won{color:var(--hit)}
+  .status.dead{color:var(--miss)}
+  .slip[data-status="dead"]{opacity:.5}
+  .slip[data-status="won"]{border-color:var(--hit)}
+
+  .note{font-size:12px;color:var(--dim);margin-top:22px;line-height:1.5;border-top:1px solid var(--line);padding-top:12px}
+  @media(max-width:560px){
+    .kpis{grid-template-columns:repeat(2,1fr)}
+    h1{font-size:30px}
+    .tags{max-width:74px}
+  }
+  @media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="eyebrow">World Cup Semifinals · 7 slips · FanDuel</div>
+  <h1>Leg Tracker</h1>
+  <div class="kpis">
+    <div class="kpi"><div class="l">Wagered</div><div class="v">$20.00</div></div>
+    <div class="kpi"><div class="l">Max payout</div><div class="v gold">$224.01</div></div>
+    <div class="kpi"><div class="l">Live payout</div><div class="v hit" id="livePay">$0.00</div></div>
+    <div class="kpi"><div class="l">Slips alive</div><div class="v" id="alive">7 / 7</div></div>
+  </div>
+</header>
+
+<div class="bar">
+  <button class="act" id="reset">Reset all legs</button>
+  <span class="hint">Tap a leg: pending → hit → miss</span>
+</div>
+
+<h2 class="match">France v Spain</h2>
+<div class="kick">3:00 PM ET</div>
+<div id="fs"></div>
+
+<h2 class="match">England v Argentina</h2>
+<div class="kick">Wed 3:00 PM ET</div>
+<div id="ea"></div>
+
+<div class="slips">
+  <h2 class="match">Slips</h2>
+  <div class="kick">A slip dies the moment one leg misses</div>
+  <div id="slipList"></div>
+</div>
+
+<div class="note">
+  Gold tag = leg appears on more than one slip. Letters map to the slips above.<br>
+  Heaviest exposure: <strong>Lamine Yamal</strong> (6 legs across 6 slips) and <strong>Kylian Mbappé</strong> (5 legs across 5 slips). France–Spain carries 18 of the 27 legs and $18 of the $20.<br>
+  Progress saves to this browser.
+</div>
+
+</div>
+
+<script>
+const LEGS = [
+  {id:'fs1', m:'fs', who:'Ousmane Dembélé', what:'1+ shot on target from outside the box (incl. ET)', slips:['A','C']},
+  {id:'fs2', m:'fs', who:'Lamine Yamal', what:'1+ shot on target from outside the box (incl. ET)', slips:['A','C']},
+  {id:'fs3', m:'fs', who:'Michael Olise', what:'1+ shot on target from outside the box', slips:['C']},
+  {id:'fs4', m:'fs', who:'Kylian Mbappé', what:'To score or assist (incl. ET)', slips:['B','D']},
+  {id:'fs5', m:'fs', who:'Lamine Yamal', what:'To score or assist (incl. ET)', slips:['B']},
+  {id:'fs6', m:'fs', who:'Ousmane Dembélé', what:'To score or assist (incl. ET)', slips:['B']},
+  {id:'fs7', m:'fs', who:'Over 3.5 Corners', what:'Away (Spain) total corners incl. ET', slips:['D','E']},
+  {id:'fs8', m:'fs', who:'Pedro Porro', what:'1+ shot', slips:['D']},
+  {id:'fs9', m:'fs', who:'France', what:'Team 5+ shots on target (incl. ET)', slips:['D']},
+  {id:'fs10', m:'fs', who:'France', what:'To qualify for the next round', slips:['E','F']},
+  {id:'fs11', m:'fs', who:'Kylian Mbappé', what:'2+ shots on target (incl. ET)', slips:['E']},
+  {id:'fs12', m:'fs', who:'Lamine Yamal', what:'3+ shots (incl. ET)', slips:['E']},
+  {id:'fs13', m:'fs', who:'Kylian Mbappé', what:'Anytime goalscorer (incl. ET)', slips:['F']},
+  {id:'fs14', m:'fs', who:'Lamine Yamal', what:'2+ shots on target (incl. ET)', slips:['F']},
+  {id:'fs15', m:'fs', who:'Kylian Mbappé', what:'3+ shots (incl. ET)', slips:['G']},
+  {id:'fs16', m:'fs', who:'Lamine Yamal', what:'1+ shot on target (incl. ET)', slips:['G']},
+  {id:'fs17', m:'fs', who:'Spain Goalkeeper', what:'3+ saves (incl. ET)', slips:['G']},
+  {id:'fs18', m:'fs', who:'France or Draw', what:'Double chance', slips:['G']},
+  {id:'ea1', m:'ea', who:'Lionel Messi', what:'1+ shot on target from outside the box (incl. ET)', slips:['A']},
+  {id:'ea2', m:'ea', who:'Jude Bellingham', what:'1+ headed shot on target (incl. ET)', slips:['A']},
+  {id:'ea3', m:'ea', who:'Lionel Messi', what:'To score or assist (incl. ET)', slips:['B']},
+  {id:'ea4', m:'ea', who:'Harry Kane', what:'To score or assist (incl. ET)', slips:['B']},
+  {id:'ea5', m:'ea', who:'Jude Bellingham', what:'To score or assist (incl. ET)', slips:['B']},
+  {id:'ea6', m:'ea', who:'Argentina Over 0.5', what:'Away team over/under 0.5 goals (incl. ET)', slips:['D']},
+  {id:'ea7', m:'ea', who:'Harry Kane', what:'1+ shot on target (incl. ET)', slips:['D']},
+  {id:'ea8', m:'ea', who:'Argentina', what:'Team 3+ shots on target (incl. ET)', slips:['D']},
+  {id:'ea9', m:'ea', who:'England', what:'Team 4+ shots on target (incl. ET)', slips:['D']},
+];
+
+const SLIPS = [
+  {id:'A', name:'4-leg SGP+', odds:'+2781', wager:2, payout:57.64, legs:['fs1','fs2','ea1','ea2']},
+  {id:'B', name:'6-leg SGP+', odds:'+3425', wager:2, payout:70.52, legs:['ea3','ea4','ea5','fs4','fs5','fs6']},
+  {id:'C', name:'3-leg SGP', odds:'+1145', wager:2, payout:24.91, legs:['fs1','fs2','fs3']},
+  {id:'D', name:'8-leg SGP+', odds:'+998', wager:2, payout:21.95, legs:['fs7','fs4','fs8','fs9','ea6','ea7','ea8','ea9']},
+  {id:'E', name:'4-leg SGP', odds:'+296', wager:5, payout:19.85, legs:['fs10','fs7','fs11','fs12']},
+  {id:'F', name:'3-leg SGP', odds:'+553', wager:2, payout:13.08, legs:['fs10','fs13','fs14']},
+  {id:'G', name:'4-leg SGP', odds:'+221 boost', wager:5, payout:16.06, legs:['fs15','fs16','fs17','fs18']},
+];
+
+const KEY = 'wc-semis-legs-v1';
+const NEXT = {pending:'hit', hit:'miss', miss:'pending'};
+const MARK = {pending:'', hit:'✓', miss:'✕'};
+
+let state = {};
+LEGS.forEach(l => state[l.id] = 'pending');
+
+function load(){
+  try{
+    const raw = localStorage.getItem(KEY);
+    if(raw){
+      const s = JSON.parse(raw);
+      LEGS.forEach(l => { if(s[l.id]) state[l.id] = s[l.id]; });
+    }
+  }catch(e){}
+}
+function save(){
+  try{ localStorage.setItem(KEY, JSON.stringify(state)); }catch(e){}
+}
+
+function legEl(l){
+  const d = document.createElement('div');
+  d.className = 'leg';
+  d.tabIndex = 0;
+  d.setAttribute('role','button');
+  d.dataset.state = state[l.id];
+  const dupe = l.slips.length > 1;
+  d.innerHTML =
+    '<div class="mark">' + MARK[state[l.id]] + '</div>' +
+    '<div class="body">' +
+      '<div class="who">' + l.who + '</div>' +
+      '<div class="what">' + l.what + '</div>' +
+    '</div>' +
+    '<div class="tags">' +
+      (dupe ? '<span class="tag dupe">×' + l.slips.length + '</span>' : '') +
+      l.slips.map(function(s){ return '<span class="tag">' + s + '</span>'; }).join('') +
+    '</div>';
+  const cycle = function(){ state[l.id] = NEXT[state[l.id]]; save(); render(); };
+  d.addEventListener('click', cycle);
+  d.addEventListener('keydown', function(e){
+    if(e.key === ' ' || e.key === 'Enter'){ e.preventDefault(); cycle(); }
+  });
+  return d;
+}
+
+function render(){
+  ['fs','ea'].forEach(function(m){
+    const box = document.getElementById(m);
+    box.innerHTML = '';
+    LEGS.filter(function(l){ return l.m === m; }).forEach(function(l){ box.appendChild(legEl(l)); });
+  });
+
+  const list = document.getElementById('slipList');
+  list.innerHTML = '';
+  let livePay = 0, alive = 0;
+
+  SLIPS.forEach(function(s){
+    const states = s.legs.map(function(id){ return state[id]; });
+    const hits = states.filter(function(x){ return x === 'hit'; }).length;
+    const dead = states.some(function(x){ return x === 'miss'; });
+    const won = hits === s.legs.length;
+    const status = dead ? 'dead' : (won ? 'won' : 'live');
+    if(!dead) alive++;
+    if(won) livePay += s.payout;
+
+    const el = document.createElement('div');
+    el.className = 'slip';
+    el.dataset.status = status;
+    el.innerHTML =
+      '<div class="top">' +
+        '<div class="name">' + s.id + ' · ' + s.name + '</div>' +
+        '<div class="odds">' + s.odds + '</div>' +
+      '</div>' +
+      '<div class="money">$' + s.wager.toFixed(2) + ' to win $' + s.payout.toFixed(2) + ' · ' + hits + '/' + s.legs.length + ' legs hit</div>' +
+      '<div class="prog"><i style="width:' + (hits / s.legs.length * 100) + '%;background:' + (dead ? 'var(--miss)' : 'var(--hit)') + '"></i></div>' +
+      '<div class="status ' + status + '">' + (dead ? 'Lost' : won ? 'Winner — $' + s.payout.toFixed(2) : 'Live') + '</div>';
+    list.appendChild(el);
+  });
+
+  document.getElementById('livePay').textContent = '$' + livePay.toFixed(2);
+  document.getElementById('alive').textContent = alive + ' / 7';
+}
+
+document.getElementById('reset').addEventListener('click', function(){
+  LEGS.forEach(function(l){ state[l.id] = 'pending'; });
+  save();
+  render();
+});
+
+load();
+render();
+</script>
+</body>
+</html>
